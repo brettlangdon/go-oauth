@@ -276,7 +276,6 @@ func oauthParams(clientCredentials *Credentials, credentials *Credentials, metho
 type Client struct {
 	Credentials                   Credentials
 	TemporaryCredentialRequestURI string // Also known as request token URL.
-	ResourceOwnerAuthorizationURI string // Also known as authorization URL.
 	TokenRequestURI               string // Also known as access token URL.
 }
 
@@ -404,7 +403,7 @@ func (c *Client) request(client *http.Client, credentials *Credentials, urlStr s
 // RequestTemporaryCredentials requests temporary credentials from the server.
 // See http://tools.ietf.org/html/rfc5849#section-2.1 for information about
 // temporary credentials.
-func (c *Client) RequestTemporaryCredentials(client *http.Client, callbackURL string, additionalParams url.Values) (*Credentials, error) {
+func (c *Client) RequestTemporaryCredentials(client *http.Client, callbackURL string, additionalParams url.Values) (*Credentials, string, error) {
 	params := make(url.Values)
 	for k, vs := range additionalParams {
 		params[k] = vs
@@ -412,8 +411,13 @@ func (c *Client) RequestTemporaryCredentials(client *http.Client, callbackURL st
 	if callbackURL != "" {
 		params.Set("oauth_callback", callbackURL)
 	}
-	credentials, _, err := c.request(client, nil, c.TemporaryCredentialRequestURI, params)
-	return credentials, err
+	credentials, data, err := c.request(client, nil, c.TemporaryCredentialRequestURI, params)
+	authenticationUrls := data["authentication_url"]
+	authUrl := ""
+	if len(authenticationUrls) > 0 {
+		authUrl = authenticationUrls[0]
+	}
+	return credentials, authUrl, err
 }
 
 // RequestToken requests token credentials from the server. See
@@ -429,16 +433,4 @@ func (c *Client) RequestToken(client *http.Client, temporaryCredentials *Credent
 		return nil, nil, err
 	}
 	return credentials, vals, nil
-}
-
-// AuthorizationURL returns the URL for resource owner authorization. See
-// http://tools.ietf.org/html/rfc5849#section-2.2 for information about
-// resource owner authorization.
-func (c *Client) AuthorizationURL(temporaryCredentials *Credentials, additionalParams url.Values) string {
-	params := make(url.Values)
-	for k, vs := range additionalParams {
-		params[k] = vs
-	}
-	params.Set("oauth_token", temporaryCredentials.Token)
-	return c.ResourceOwnerAuthorizationURI + "?" + params.Encode()
 }
