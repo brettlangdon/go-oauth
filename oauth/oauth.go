@@ -389,14 +389,16 @@ func (c *Client) request(client *http.Client, credentials *Credentials, urlStr s
 		return nil, nil, err
 	}
 	tokens := m["oauth_token"]
-	if len(tokens) == 0 || tokens[0] == "" {
-		return nil, nil, errors.New("oauth: token missing from server result")
+	token := ""
+	if len(tokens) > 0 && tokens[0] != "" {
+		token = tokens[0]
 	}
 	secrets := m["oauth_token_secret"]
-	if len(secrets) == 0 { // allow "" as a valid secret.
-		return nil, nil, errors.New("oauth: secret mssing from server result")
+	secret := ""
+	if len(secrets) != 0 { // allow "" as a valid secret.
+		secret = secrets[0]
 	}
-	return &Credentials{Token: tokens[0], Secret: secrets[0]}, m, nil
+	return &Credentials{Token: token, Secret: secret}, m, nil
 }
 
 // RequestTemporaryCredentials requests temporary credentials from the server.
