@@ -369,6 +369,28 @@ func (c *Client) Post(client *http.Client, credentials *Credentials, urlStr stri
 	return client.Do(req)
 }
 
+// Put issues a PUT with the specified form.
+func (c *Client) Put(client *http.Client, credentials *Credentials, urlStr string, form url.Values) (*http.Response, error) {
+	req, err := http.NewRequest("PUT", urlStr, strings.NewReader(form.Encode()))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Authorization", c.AuthorizationHeader(credentials, "PUT", req.URL, form))
+	return client.Do(req)
+}
+
+// Delete issues a DELETE with the specified form.
+func (c *Client) Delete(client *http.Client, credentials *Credentials, urlStr string, form url.Values) (*http.Response, error) {
+	req, err := http.NewRequest("DELETE", urlStr, strings.NewReader(form.Encode()))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Authorization", c.AuthorizationHeader(credentials, "DELETE", req.URL, form))
+	return client.Do(req)
+}
+
 func (c *Client) request(client *http.Client, credentials *Credentials, urlStr string, params url.Values) (*Credentials, url.Values, error) {
 	c.SignParam(credentials, "POST", urlStr, params)
 	resp, err := client.PostForm(urlStr, params)
